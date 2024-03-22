@@ -36,7 +36,7 @@ public class FileWatcher {
                 for (WatchEvent<?> event : key.pollEvents()) {
                     WatchEvent.Kind<?> kind = event.kind();
                     Path context = (Path) event.context();
-                    broadcast(kind + " |-----| " + context);
+
                     Path fullPath = SCRIPTS_FOLDER.resolve((Path) key.watchable()).resolve(context).normalize();
                     File file = fullPath.toFile();
 
