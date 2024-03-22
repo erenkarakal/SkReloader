@@ -1,0 +1,8 @@
+name: SkReloader
+version: '${project.version}'
+main: me.eren.skreloader.SkReloader
+api-version: '1.17'
+authors:
+  - eren.
+depend:
+  - Skript
