@@ -23,6 +23,7 @@ public final class SkReloader extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        FileWatcher.shouldStop = true;
         fileWatcher.cancel();
     }
 

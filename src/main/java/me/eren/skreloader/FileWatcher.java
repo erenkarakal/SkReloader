@@ -14,6 +14,12 @@ import java.util.stream.Stream;
 public class FileWatcher {
 
     private static final Path SCRIPTS_FOLDER = Paths.get(Skript.getInstance().getDataFolder().getAbsolutePath() + "/" + Skript.SCRIPTSFOLDER + "/");
+    /**
+     * If you spam reload you will end up with "command/function already exists" errors because Skript loads the same script twice in a row.
+     * This field is here to solve the issue.
+     */
+    private static long lastReloadTime = 0L;
+    protected static boolean shouldStop = false;
 
     public static void start() {
 
@@ -30,12 +36,19 @@ public class FileWatcher {
 
             broadcast("Started FileWatcher! Scripts folder: '" + SCRIPTS_FOLDER + "'");
 
-            while (true) {
+            while (!shouldStop) {
                 WatchKey key = watchService.take();
+                broadcast("ran");
+                if (System.currentTimeMillis() - lastReloadTime < 50L) { // 1 tick
+                    broadcast("on cooldown");
+                    continue;
+                }
+                lastReloadTime = System.currentTimeMillis();
 
                 for (WatchEvent<?> event : key.pollEvents()) {
                     WatchEvent.Kind<?> kind = event.kind();
                     Path context = (Path) event.context();
+                    broadcast(kind + " " + context);
 
                     Path fullPath = SCRIPTS_FOLDER.resolve((Path) key.watchable()).resolve(context).normalize();
                     File file = fullPath.toFile();
@@ -54,7 +67,9 @@ public class FileWatcher {
 
                     } else if (kind == StandardWatchEventKinds.ENTRY_MODIFY) {
                         Script script = ScriptLoader.getScript(file);
-                        if (script == null) continue;
+                        if (script == null) {
+                            continue;
+                        }
                         broadcast("Reloading §e" + getScriptName(file) + "§f...");
 
                         Bukkit.getScheduler().runTask(SkReloader.getInstance(), () -> {
@@ -67,7 +82,6 @@ public class FileWatcher {
                         });
                     }
                 }
-
                 if (!key.reset()) {
                     broadcast("Stopping the FileWatcher. Directory is no longer accessible (or something else went wrong).");
                     break;
