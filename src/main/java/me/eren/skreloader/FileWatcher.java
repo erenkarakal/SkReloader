@@ -17,18 +17,18 @@ public class FileWatcher {
     /**
      * If you spam reload you will end up with "command/function already exists" errors because Skript loads the same script twice in a row.
      * This field is here to solve the issue.
+     * It can still happen but only if you actually try to break it.
      */
-    private static long lastReloadTime = 0L;
+    protected static long lastReloadTime = 0L;
     protected static boolean shouldStop = false;
 
     public static void start() {
-
         try (Stream<Path> files = Files.walk(SCRIPTS_FOLDER);
-                WatchService watchService = FileSystems.getDefault().newWatchService()) {
+             WatchService watchService = FileSystems.getDefault().newWatchService()) {
 
             files.filter(file -> file.toFile().isDirectory()).forEach(file -> {
                 try {
-                    file.register(watchService, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_MODIFY);
+                    file.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY);
                 } catch (IOException e) {
                     throw new RuntimeException("Error while registering the FileWatcher!", e);
                 }
@@ -38,9 +38,11 @@ public class FileWatcher {
 
             while (!shouldStop) {
                 WatchKey key = watchService.take();
-                broadcast("ran");
                 if (System.currentTimeMillis() - lastReloadTime < 50L) { // 1 tick
-                    broadcast("on cooldown");
+                    if (!key.reset()) {
+                        broadcast("Stopping the FileWatcher. Directory is no longer accessible (or something else went wrong).");
+                        break;
+                    }
                     continue;
                 }
                 lastReloadTime = System.currentTimeMillis();
@@ -48,24 +50,25 @@ public class FileWatcher {
                 for (WatchEvent<?> event : key.pollEvents()) {
                     WatchEvent.Kind<?> kind = event.kind();
                     Path context = (Path) event.context();
-                    broadcast(kind + " " + context);
 
                     Path fullPath = SCRIPTS_FOLDER.resolve((Path) key.watchable()).resolve(context).normalize();
                     File file = fullPath.toFile();
 
-                    if (kind == StandardWatchEventKinds.ENTRY_CREATE) {
-                        broadcast("Loading new file §e" + getScriptName(file) + "§f...");
+//                    if (kind == StandardWatchEventKinds.ENTRY_CREATE) {
+//                        if (file.getName().startsWith(ScriptLoader.DISABLED_SCRIPT_PREFIX))
+//                            continue; // stop /sk disable from triggering this
+//                        broadcast("Loading new file §e" + getScriptName(file) + "§f...");
+//
+//                        Bukkit.getScheduler().runTask(SkReloader.getInstance(), () -> {
+//                            try (RetainingLogHandler logHandler = new RetainingLogHandler()) {
+//                                ScriptLoader.loadScripts(file, logHandler);
+//                                printErrors(logHandler);
+//                            } finally {
+//                                broadcast("Loaded!");
+//                            }
+//                        });
 
-                        Bukkit.getScheduler().runTask(SkReloader.getInstance(), () -> {
-                            try (RetainingLogHandler logHandler = new RetainingLogHandler()) {
-                                ScriptLoader.loadScripts(file, logHandler);
-                                printErrors(logHandler);
-                            } finally {
-                                broadcast("Loaded!");
-                            }
-                        });
-
-                    } else if (kind == StandardWatchEventKinds.ENTRY_MODIFY) {
+                    if (kind == StandardWatchEventKinds.ENTRY_MODIFY) {
                         Script script = ScriptLoader.getScript(file);
                         if (script == null) {
                             continue;
