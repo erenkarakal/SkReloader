@@ -53,6 +53,13 @@ public class FileWatcher {
 
                     Path fullPath = SCRIPTS_FOLDER.resolve((Path) key.watchable()).resolve(context).normalize();
                     File file = fullPath.toFile();
+                    if (!file.isFile()) {
+                        if (!key.reset()) {
+                            broadcast("Stopping the FileWatcher. Directory is no longer accessible (or something else went wrong).");
+                            break;
+                        }
+                        continue;
+                    }
 
 //                    if (kind == StandardWatchEventKinds.ENTRY_CREATE) {
 //                        if (file.getName().startsWith(ScriptLoader.DISABLED_SCRIPT_PREFIX))
