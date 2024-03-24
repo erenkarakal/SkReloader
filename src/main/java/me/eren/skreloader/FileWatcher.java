@@ -13,7 +13,7 @@ import java.util.stream.Stream;
 
 public class FileWatcher {
 
-    private static final Path SCRIPTS_FOLDER = Paths.get(Skript.getInstance().getDataFolder().getAbsolutePath().replaceAll("\\\\", "/") + "/" + Skript.SCRIPTSFOLDER + "/");
+    private static final Path SCRIPTS_FOLDER = Paths.get(Skript.getInstance().getDataFolder().getAbsolutePath() + "/" + Skript.SCRIPTSFOLDER + "/");
     /**
      * If you spam reload you will end up with "command/function already exists" errors because Skript loads the same script twice in a row.
      * This field is here to solve the issue.
@@ -118,7 +118,7 @@ public class FileWatcher {
     }
 
     private static String getScriptName(File file) {
-        String name = file.toString().replaceAll(SCRIPTS_FOLDER + "/", "");
+        String name = file.toString().replace(SCRIPTS_FOLDER + "/", "");
         if (name.contains("/")) {
             return "/" + name;
         }
