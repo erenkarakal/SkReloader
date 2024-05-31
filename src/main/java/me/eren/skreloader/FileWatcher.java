@@ -21,6 +21,7 @@ public class FileWatcher {
      */
     protected static long lastReloadTime = 0L;
     protected static boolean shouldStop = false;
+    protected static long reloadCooldown = 3000L;
 
     public static void start() {
         try (Stream<Path> files = Files.walk(SCRIPTS_FOLDER);
@@ -38,7 +39,7 @@ public class FileWatcher {
 
             while (!shouldStop) {
                 WatchKey key = watchService.take();
-                if (System.currentTimeMillis() - lastReloadTime < 50L) { // 1 tick
+                if (System.currentTimeMillis() - lastReloadTime < reloadCooldown) {
                     if (!key.reset()) {
                         broadcast("Stopping the FileWatcher. Directory is no longer accessible (or something else went wrong).");
                         break;

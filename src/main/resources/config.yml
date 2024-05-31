@@ -1,0 +1,3 @@
+# Cooldown in ticks before a file can be reloaded.
+# setting this to too low or 0 may cause "function/command already exists" errors.
+reload-cooldown: 3

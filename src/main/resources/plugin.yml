@@ -1,7 +1,7 @@
 name: SkReloader
 version: '${project.version}'
 main: me.eren.skreloader.SkReloader
-api-version: '1.17'
+api-version: '1.13'
 authors:
   - eren.
 depend:
