@@ -2,7 +2,9 @@ package me.eren.skreloader;
 
 import ch.njol.skript.ScriptLoader;
 import ch.njol.skript.Skript;
+import ch.njol.skript.log.LogEntry;
 import ch.njol.skript.log.RetainingLogHandler;
+import ch.njol.skript.log.SkriptLogger;
 import org.bukkit.Bukkit;
 import org.skriptlang.skript.lang.script.Script;
 
@@ -84,7 +86,7 @@ public class FileWatcher {
                         broadcast("Reloading §e" + getScriptName(file) + "§f...");
 
                         Bukkit.getScheduler().runTask(SkReloader.getInstance(), () -> {
-                            try (RetainingLogHandler logHandler = new RetainingLogHandler()) {
+                            try (RetainingLogHandler logHandler = new RetainingLogHandler().start()) {
                                 ScriptLoader.reloadScript(script, logHandler);
                                 printErrors(logHandler);
                             } finally {
@@ -112,16 +114,18 @@ public class FileWatcher {
     }
 
     private static void printErrors(RetainingLogHandler logHandler) {
-        Bukkit.getOnlinePlayers().stream()
-                .filter(p -> p.hasPermission("skreloader.message"))
-                .forEach(p -> logHandler.printErrors(p, null));
-        logHandler.printErrors(Bukkit.getConsoleSender(), null);
+        for (LogEntry entry : logHandler.getLog()) {
+            Bukkit.getOnlinePlayers().stream()
+                    .filter(p -> p.hasPermission("skreloader.message"))
+                    .forEach(p -> SkriptLogger.sendFormatted(p, entry.toFormattedString()));
+            SkriptLogger.sendFormatted(Bukkit.getConsoleSender(), entry.toFormattedString());
+        }
     }
 
     private static String getScriptName(File file) {
-        String name = file.toString().replace(SCRIPTS_FOLDER + "/", "");
-        if (name.contains("/")) {
-            return "/" + name;
+        String name = file.toString().replace(SCRIPTS_FOLDER + File.separator, "");
+        if (name.contains(File.separator)) {
+            return File.separator + name;
         }
         return name;
     }

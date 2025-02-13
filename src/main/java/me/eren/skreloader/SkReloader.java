@@ -14,6 +14,7 @@ public final class SkReloader extends JavaPlugin {
         saveDefaultConfig();
         FileWatcher.reloadCooldown = getConfig().getLong("reload-cooldown") * 50;
         new Thread(FileWatcher::start).start();
+        new Metrics(this, 23506);
     }
 
     @Override
